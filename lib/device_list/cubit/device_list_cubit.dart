@@ -22,6 +22,8 @@ class DeviceListCubit extends Cubit<DeviceListState> {
         cubitStatus: DeviceListCubitStatus.loading,
       ),
     );
+    DeviceListModel? cachedDeviceListModel = await HiveHelper.getDeviceList();
+
     try {
       DeviceListModel deviceListModel =
           await _deviceListRepository.getDeviceList();
@@ -37,13 +39,11 @@ class DeviceListCubit extends Cubit<DeviceListState> {
           deviceListModel: deviceListModel,
         );
       } else {
-        DeviceListModel? cachedDeviceListModel =
-            await HiveHelper.getDeviceList();
         if (cachedDeviceListModel != null) {
           emit(
             state.copyWith(
               cubitStatus: DeviceListCubitStatus.success,
-              deviceListModelList: deviceListModel,
+              deviceListModelList: cachedDeviceListModel,
             ),
           );
         } else {
@@ -55,11 +55,20 @@ class DeviceListCubit extends Cubit<DeviceListState> {
         }
       }
     } catch (error) {
-      emit(
-        state.copyWith(
-          cubitStatus: DeviceListCubitStatus.failure,
-        ),
-      );
+      if (cachedDeviceListModel != null) {
+        emit(
+          state.copyWith(
+            cubitStatus: DeviceListCubitStatus.success,
+            deviceListModelList: cachedDeviceListModel,
+          ),
+        );
+      } else {
+        emit(
+          state.copyWith(
+            cubitStatus: DeviceListCubitStatus.failure,
+          ),
+        );
+      }
     }
   }
 
